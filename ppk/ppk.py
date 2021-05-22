@@ -224,6 +224,34 @@ class API():
                            for i in range(discard_jitter_count, len(avg_buf))]
         return (self.favg(avg_buf[discard_jitter_count:]), timestamped_buf)
 
+    def measure_average_long_time(self, time_s):
+        """Calculates average without storing all the values in memory.
+        Suitable for long time measurement.
+        """
+        if not self._connected:
+            raise PPKError("Invalid operation: must connect first.")
+        self._log("measure_long_average(%d)." % time_s)
+        ppk_helper = PPKDataHelper()
+        end_time = time.time() + time_s
+        accumulated_samples = 0.0
+        number_samples = 0
+        self._start_average_measurement()
+        while True:
+            self._read_and_parse_ppk_data(ppk_helper)
+            for pkt in ppk_helper:
+                if ppk_helper.is_average_pkt(pkt):
+                    sample = ppk_helper.unpack_average(pkt)
+                    accumulated_samples += sample
+                    number_samples += 1
+                    self._log("Current value: %.2f" % sample, end='\r')
+            if time.time() > end_time:
+                break
+        self._log('')
+        self._stop_average_measurement()
+        self._flush_rtt()
+        avg = accumulated_samples / number_samples
+        return avg
+
     def measure_triggers(self, window_time_us, level_ua, count=1):
         """Collect count trigger buffers."""
         if not self._connected:

@@ -76,6 +76,17 @@ def _measure_avg(ppk_api, time_s, out_file, draw_png, print_json):
         print(json.dumps(result_dict))
 
 
+def _measure_avg_long_time(ppk_api, time_s, out_file):
+    """ Prints the average current over a specified long time.
+    Individual samples are not saved.
+    """
+    avg = ppk_api.measure_average_long_time(time_s)
+    print("Average time: %0.2fuA" % avg)
+    if out_file:
+        with open(out_file, "w") as f:
+            f.write(str(round(avg, 2)))
+
+
 def _measure_triggers(ppk_api, time_us, level_ua, count, out_file, draw_png, print_json):
     """Acquire and process trigger buffers."""
     json_dict = None
@@ -192,6 +203,8 @@ def _add_and_parse_args():
                         help="serial number of J-Link")
     parser.add_argument("-a", "--average", type=float,
                         help="print average current over time")
+    parser.add_argument("-l", "--average_long", type=float,
+                        help="print average current over a long time")
     parser.add_argument("-w", "--trigger_microseconds", type=int, nargs='?', default=5850,
                         help="set trigger window in microseconds [%d, %d]" %
                         (ppk.API.TRIG_WINDOW_MIN_US, ppk.API.TRIG_WINDOW_MAX_US))
@@ -230,7 +243,7 @@ def _add_and_parse_args():
                               action="store_true")
     args = parser.parse_args()
     if not args.trigger_microamps and not args.enable_ext_trigger:
-        if not args.average:
+        if not args.average and not args.average_long:
             parser.print_usage()
             print("main.py: error: no measurement operation specified")
             sys.exit(-1)
@@ -288,6 +301,11 @@ def _main():
                          args.out_file,
                          args.png,
                          args.json)
+
+        if args.average_long:
+            _measure_avg_long_time(ppk_api,
+                                   args.average_long,
+                                   args.out_file)
 
         if args.trigger_microamps:
             _measure_triggers(ppk_api,
