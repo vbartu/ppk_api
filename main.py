@@ -81,10 +81,15 @@ def _measure_avg_long_time(ppk_api, time_s, out_file):
     Individual samples are not saved.
     """
     avg = ppk_api.measure_average_long_time(time_s)
-    print("Average time: %0.2fuA" % avg)
+    mah = avg * time_s / 3600 / 1000
+    print("Time: %0.2f s" % time_s)
+    print("Average current: %0.2f uA" % avg)
+    print("Average charge: %0.2f mAh" % mah)
     if out_file:
         with open(out_file, "w") as f:
-            f.write(str(round(avg, 2)))
+            f.write("Time: %0.2f s\n" % time_s)
+            f.write("Average current: %0.2f uA\n" % avg)
+            f.write("Average charge: %0.2f mAh\n" % mah)
 
 
 def _measure_triggers(ppk_api, time_us, level_ua, count, out_file, draw_png, print_json):
